@@ -70,16 +70,16 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 </head>
 <body>
 <div class="header">
-  <h1>PRICE QUERY</h1>
+  <h1>📊 PRICE QUERY</h1>
   <div class="date">2025-05-08 / REFERENCE ONLY</div>
   <div class="header-btns">
-    <button class="hdr-btn" onclick="resetAll()">RESET</button>
-    <button class="hdr-btn" onclick="exportData()">EXPORT</button>
+    <button class="hdr-btn" onclick="resetAll()">🔄 RESET</button>
+    <button class="hdr-btn" onclick="exportData()">📋 EXPORT</button>
   </div>
 </div>
 <div class="stats" id="stats"></div>
 <div class="search-wrap">
-  <input type="text" id="search" placeholder="SEARCH...">
+  <input type="text" id="search" placeholder="🔍 SEARCH...">
   <button class="search-clear" id="searchClear">&times;</button>
 </div>
 <div class="filter-wrap">
@@ -87,7 +87,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 </div>
 <div class="result-count" id="resultCount"></div>
 <div class="card-list" id="cardList"></div>
-<div class="footer">DATA FOR REFERENCE ONLY / ACADEMIC RESEARCH</div>
+<div class="footer">⚠️ DATA FOR REFERENCE ONLY / ACADEMIC RESEARCH</div>
 <div class="toast" id="toast"></div>
 <script>
 const R=[
@@ -184,10 +184,10 @@ function renderStats(){
   let tsp=0;DATA.forEach(d=>{tsp+=(d.customPrice-d.price)});
   const cls=tsp>0?"sell":tsp<0?"down":"total";
   document.getElementById('stats').innerHTML=
-    '<div class="stat total"><div class="num">'+DATA.length+'</div><div class="label">TOTAL</div></div>'+
-    '<div class="stat up"><div class="num">'+up+'</div><div class="label">UP</div></div>'+
-    '<div class="stat down"><div class="num">'+down+'</div><div class="label">DOWN</div></div>'+
-    '<div class="stat '+cls+'"><div class="num">'+(tsp>0?'+':'')+tsp.toFixed(0)+'</div><div class="label">PROFIT</div></div>';
+    '<div class="stat total"><div class="num">'+DATA.length+'</div><div class="label">📦 TOTAL</div></div>'+
+    '<div class="stat up"><div class="num">'+up+'</div><div class="label">📈 UP</div></div>'+
+    '<div class="stat down"><div class="num">'+down+'</div><div class="label">📉 DOWN</div></div>'+
+    '<div class="stat '+cls+'"><div class="num">'+(tsp>0?'+':'')+tsp.toFixed(0)+'</div><div class="label">💎 PROFIT</div></div>';
 }
 
 function renderFilters(){
@@ -205,7 +205,7 @@ function getList(){
 
 function renderCards(){
   const list=getList();
-  document.getElementById('resultCount').textContent='> '+list.length+' ITEMS';
+  document.getElementById('resultCount').textContent='📊 '+list.length+' ITEMS';
   if(!list.length){document.getElementById('cardList').innerHTML='<div class="empty">NO RESULTS</div>';return}
   let h='';
   for(const d of list){
@@ -213,15 +213,15 @@ function renderCards(){
     h+='<div class="card">'+
       '<div class="card-top"><span class="card-name">'+d.name+'</span><span class="card-cat">'+d.category+'</span></div>'+
       '<div class="card-price-row">'+
-        '<div class="p-item"><span class="p-label">WHOLESALE</span><span class="p-val yellow">¥'+d.price+'</span></div>'+
-        '<div class="p-item"><span class="p-label">RETAIL</span><span class="p-val '+(d.retail?'purple':'dim')+'">'+fmtP(d.retail)+'</span></div>'+
+        '<div class="p-item"><span class="p-label">📦 WHOLESALE</span><span class="p-val yellow">¥'+d.price+'</span></div>'+
+        '<div class="p-item"><span class="p-label">🏪 RETAIL</span><span class="p-val '+(d.retail?'purple':'dim')+'">'+fmtP(d.retail)+'</span></div>'+
       '</div>'+
       '<div class="card-price-row">'+
-        '<div class="p-item"><span class="p-label">SELL PRICE</span><input class="custom-input" type="number" step="0.5" value="'+d.customPrice+'" data-name="'+d.name+'"></div>'+
-        '<div class="p-item"><span class="p-label">PROFIT</span><span class="p-val '+pCls(cp2)+'">'+pPre(cp2)+cp2.toFixed(1)+'</span></div>'+
+        '<div class="p-item"><span class="p-label">🏷️ SELL PRICE</span><input class="custom-input" type="number" step="0.5" value="'+d.customPrice+'" data-name="'+d.name+'"></div>'+
+        '<div class="p-item"><span class="p-label">💎 PROFIT</span><span class="p-val '+pCls(cp2)+'">'+pPre(cp2)+cp2.toFixed(1)+'</span></div>'+
       '</div>'+
       '<div class="card-detail">'+
-        '<div class="d-item"><span class="d-label">P&L</span><span class="d-val '+pCls(d.profit)+'">'+pPre(d.profit)+d.profit+'</span></div>'+
+        '<div class="d-item"><span class="d-label">📊 P&L</span><span class="d-val '+pCls(d.profit)+'">'+pPre(d.profit)+d.profit+'</span></div>'+
       '</div>'+
     '</div>';
   }
@@ -248,14 +248,14 @@ document.getElementById('searchClear').addEventListener('click',function(){
 });
 
 function resetAll(){
-  if(confirm('Reset all custom prices?')){localStorage.removeItem(LS);cp={};DATA.forEach(d=>{d.customPrice=d.price});renderCards();showToast('RESET OK')}
+  if(confirm('🔄 Reset all custom prices?')){localStorage.removeItem(LS);cp={};DATA.forEach(d=>{d.customPrice=d.price});renderCards();showToast('✅ RESET OK')}
 }
 function exportData(){
   const lines=['ID\tNAME\tWHOLESALE\tSELL\tPROFIT'];
   DATA.forEach(d=>{lines.push(d._i+'\t'+d.name+'\t'+d.price+'\t'+d.customPrice+'\t'+(d.customPrice-d.price).toFixed(1))});
   const text=lines.join('\n');
-  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('COPIED'))}
-  else{const b=new Blob([text],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='prices.txt';a.click();showToast('DOWNLOADED')}
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('📋 COPIED'))}
+  else{const b=new Blob([text],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='prices.txt';a.click();showToast('📥 DOWNLOADED')}
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
 
