@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🚬 烟草价格查询</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;min-height:100vh;padding-bottom:80px}
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 16px 16px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.5)}
+.header h1{font-size:22px;color:#fff;margin-bottom:4px}
+.header .date{font-size:12px;color:#888}
+.stats{display:flex;justify-content:center;gap:20px;padding:12px 16px;background:#1a1a1a;border-bottom:1px solid #2a2a2a}
+.stats .stat{text-align:center}
+.stats .stat .num{font-size:20px;font-weight:700}
+.stats .stat .label{font-size:11px;color:#888;margin-top:2px}
+.stat-up .num{color:#ff4444}
+.stat-down .num{color:#00cc66}
+.stat-total .num{color:#ffc107}
+.search-wrap{padding:12px 16px;background:#1a1a1a;position:sticky;top:72px;z-index:99}
+.search-wrap input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid #333;background:#2a2a2a;color:#fff;font-size:15px;outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:#ffc107}
+.search-wrap input::placeholder{color:#666}
+.filter-wrap{padding:8px 16px 12px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;position:sticky;top:126px;z-index:98}
+.filter-tags{display:flex;flex-wrap:wrap;gap:8px}
+.filter-tags .tag{padding:5px 14px;border-radius:20px;font-size:13px;background:#2a2a2a;color:#aaa;border:1px solid #333;cursor:pointer;transition:all .2s;white-space:nowrap}
+.filter-tags .tag.active{background:#ffc107;color:#000;border-color:#ffc107;font-weight:600}
+.sort-wrap{padding:8px 16px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:176px;z-index:97}
+.sort-wrap::-webkit-scrollbar{display:none}
+.sort-btn{padding:5px 12px;border-radius:8px;font-size:12px;background:#2a2a2a;color:#aaa;border:1px solid #333;cursor:pointer;white-space:nowrap;transition:all .2s}
+.sort-btn.active{background:#e65100;color:#fff;border-color:#e65100}
+.card-list{padding:8px 12px}
+.card{background:#1e1e1e;border-radius:12px;padding:14px 16px;margin-bottom:8px;border:1px solid #2a2a2a;transition:transform .15s}
+.card:active{transform:scale(0.98)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-name{font-size:16px;font-weight:600;color:#fff;flex:1;margin-right:8px}
+.card-category{font-size:11px;padding:2px 8px;border-radius:10px;background:#2a2a2e;color:#888;border:1px solid #333;white-space:nowrap}
+.card-mid{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.card-price{font-size:24px;font-weight:700;color:#ffc107}
+.card-price span{font-size:13px;color:#888;margin-left:2px}
+.card-profit{font-size:16px;font-weight:700;padding:3px 10px;border-radius:8px}
+.card-profit.up{color:#ff4444;background:rgba(255,68,68,0.12)}
+.card-profit.down{color:#00cc66;background:rgba(0,204,102,0.12)}
+.card-bot{display:flex;gap:16px;font-size:12px}
+.card-tar{color:#42a5f5}
+.card-retail{color:#ab47bc}
+.empty{text-align:center;padding:60px 20px;color:#666;font-size:15px}
+.footer{text-align:center;padding:20px 16px;font-size:11px;color:#555;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(transparent,#0f0f0f 30%)}
+.result-count{padding:6px 16px;font-size:12px;color:#666;background:#1a1a1a}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🚬 烟草价格查询</h1>
+  <div class="date">2025-05-08 仅供参考</div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="search-wrap">
+  <input type="text" id="search" placeholder="🔍 搜索品牌或名称...">
+</div>
+
+<div class="filter-wrap">
+  <div class="filter-tags" id="filterTags"></div>
+</div>
+
+<div class="sort-wrap" id="sortWrap"></div>
+
+<div class="result-count" id="resultCount"></div>
+<div class="card-list" id="cardList"></div>
+
+<div class="footer">价格仅供参考，以实际交易为准 | 焦油量/零售价仅供参考</div>
+
+<script>
+const DATA=[
+{name:"芙蓉王(硬蓝)",category:"芙蓉王",price:208,profit:-10.36,tar:10,retail:250},
+{name:"芙蓉王(软蓝)",category:"芙蓉王",price:271,profit:-36.4,tar:10,retail:350},
+{name:"芙蓉王(硬红宝石)",category:"芙蓉王",price:238,profit:-25,tar:10,retail:300},
+{name:"芙蓉王(硬领航)",category:"芙蓉王",price:414,profit:-15,tar:8,retail:500},
+{name:"芙蓉王(硬中支)",category:"芙蓉王",price:277,profit:9,tar:8,retail:300},
+{name:"芙蓉王(沁爽细支)",category:"芙蓉王",price:272,profit:-18,tar:6,retail:300},
+{name:"芙蓉王(锦绣细支)",category:"芙蓉王",price:414,profit:-10,tar:6,retail:500},
+{name:"芙蓉王(红宝石)",category:"芙蓉王",price:338,profit:6,tar:10,retail:400},
+{name:"芙蓉王(王之荣耀)",category:"芙蓉王",price:306,profit:6,tar:10,retail:350},
+{name:"中华(金细支)",category:"中华",price:696,profit:18,tar:6,retail:800},
+{name:"中华(金中支)",category:"中华",price:690,profit:11.5,tar:8,retail:800},
+{name:"中华(全开式)",category:"中华",price:440.5,profit:16.5,tar:11,retail:500},
+{name:"中华(双中支)",category:"中华",price:368,profit:-13.6,tar:8,retail:500},
+{name:"中华(硬)",category:"中华",price:348.5,profit:-33.1,tar:11,retail:450},
+{name:"中华(软)",category:"中华",price:511,profit:-72,tar:11,retail:700},
+{name:"中华(330)",category:"中华",price:534,profit:-49,tar:11,retail:650},
+{name:"中华(328)",category:"中华",price:522,profit:-61,tar:11,retail:650},
+{name:"中华(329)",category:"中华",price:518,profit:-65,tar:11,retail:650},
+{name:"中华(细支)",category:"中华",price:415,profit:-9,tar:6,retail:500},
+{name:"中华(金短支)",category:"中华",price:499,profit:-11,tar:10,retail:600},
+{name:"黄鹤楼(硬金砂)",category:"黄鹤楼",price:143.5,profit:0.5,tar:10,retail:150},
+{name:"黄鹤楼(软蓝)",category:"黄鹤楼",price:162.5,profit:-1.8,tar:10,retail:200},
+{name:"黄鹤楼(硬红)",category:"黄鹤楼",price:196,profit:5.2,tar:10,retail:220},
+{name:"黄鹤楼(软雅韵)",category:"黄鹤楼",price:229.5,profit:17.5,tar:9,retail:260},
+{name:"黄鹤楼(硬银紫)",category:"黄鹤楼",price:138.5,profit:24,tar:10,retail:150},
+{name:"黄鹤楼(硬8度)",category:"黄鹤楼",price:163,profit:5,tar:7,retail:200},
+{name:"黄鹤楼(硬峡谷柔情)",category:"黄鹤楼",price:232.5,profit:-6,tar:10,retail:270},
+{name:"黄鹤楼(细支峡谷情)",category:"黄鹤楼",price:246,profit:-17,tar:6,retail:300},
+{name:"黄鹤楼(峡谷柔情)",category:"黄鹤楼",price:265,profit:2,tar:10,retail:300},
+{name:"黄鹤楼(硬峡谷情)",category:"黄鹤楼",price:332,profit:-7.2,tar:10,retail:400},
+{name:"黄鹤楼(平安久久)",category:"黄鹤楼",price:666,profit:-54.8,tar:8,retail:800},
+{name:"黄鹤楼(软1916)",category:"黄鹤楼",price:778,profit:-70,tar:6,retail:1000},
+{name:"黄鹤楼(硬1916)",category:"黄鹤楼",price:662,profit:-13.4,tar:6,retail:800},
+{name:"黄鹤楼(新1916)",category:"黄鹤楼",price:713,profit:-8,tar:6,retail:900},
+{name:"黄鹤楼(视窗)",category:"黄鹤楼",price:319,profit:19,tar:8,retail:350},
+{name:"黄鹤楼(硬奇景)",category:"黄鹤楼",price:232,profit:20,tar:8,retail:260},
+{name:"黄鹤楼(冰咖)",category:"黄鹤楼",price:312,profit:87,tar:6,retail:350},
+{name:"双喜(硬)",category:"双喜",price:123.5,profit:43.5,tar:10,retail:100},
+{name:"双喜(01)",category:"双喜",price:124.5,profit:2.6,tar:10,retail:150},
+{name:"双喜(软经典)",category:"双喜",price:120,profit:23,tar:11,retail:100},
+{name:"双喜(盛世经典)",category:"双喜",price:168,profit:-33.4,tar:10,retail:210},
+{name:"双喜(硬1906)",category:"双喜",price:146,profit:-4.52,tar:10,retail:200},
+{name:"双喜(软1906)",category:"双喜",price:137.5,profit:-5.6,tar:10,retail:200},
+{name:"双喜(硬工坊)",category:"双喜",price:158,profit:-27.5,tar:10,retail:210},
+{name:"双喜(软盛世)",category:"双喜",price:161,profit:-19.2,tar:10,retail:210},
+{name:"双喜(邮喜)",category:"双喜",price:230,profit:-33,tar:8,retail:300},
+{name:"双喜(国喜)",category:"双喜",price:264,profit:-36,tar:8,retail:300},
+{name:"双喜(花悦)",category:"双喜",price:133,profit:-6.92,tar:8,retail:160},
+{name:"双喜(喜粤)",category:"双喜",price:146,profit:-55.4,tar:8,retail:200},
+{name:"双喜(细支春天)",category:"双喜",price:185,profit:-40,tar:6,retail:230},
+{name:"双喜(中支春天)",category:"双喜",price:243,profit:-20,tar:8,retail:300},
+{name:"双喜(春天魅影)",category:"双喜",price:379,profit:-45,tar:6,retail:450},
+{name:"双喜(勿忘我)",category:"双喜",price:160,profit:-15,tar:8,retail:200},
+{name:"双喜(金)",category:"双喜",price:118.5,profit:-3.4,tar:10,retail:150},
+{name:"南京(十二钗)",category:"南京",price:182.5,profit:-6.18,tar:6,retail:210},
+{name:"南京(大观园)",category:"南京",price:255,profit:-8,tar:6,retail:300},
+{name:"南京(雨花石)",category:"南京",price:431,profit:-24.8,tar:5,retail:530},
+{name:"南京(软九五)",category:"南京",price:692,profit:-28.8,tar:8,retail:800},
+{name:"南京(细支九五)",category:"南京",price:652,profit:-20.4,tar:5,retail:800},
+{name:"南京(九五)",category:"南京",price:692,profit:-28.8,tar:8,retail:800},
+{name:"南京(3mg)",category:"南京",price:555,profit:3.8,tar:3,retail:650},
+{name:"白沙(精品)",category:"白沙",price:74,profit:2.5,tar:10,retail:80},
+{name:"白沙(三代)",category:"白沙",price:128,profit:-1.3,tar:11,retail:150},
+{name:"白沙(和天下)",category:"白沙",price:814,profit:-14.1,tar:8,retail:1000},
+{name:"白沙(硬和天下)",category:"白沙",price:711,profit:-9.8,tar:8,retail:800},
+{name:"白沙(细支和天下)",category:"白沙",price:711,profit:-9.8,tar:6,retail:800},
+{name:"白沙(中支和天下)",category:"白沙",price:738,profit:-25.2,tar:8,retail:900},
+{name:"白沙(硬细支和气生财)",category:"白沙",price:466,profit:-9.4,tar:6,retail:530},
+{name:"利群(软蓝)",category:"利群",price:162,profit:23.5,tar:10,retail:180},
+{name:"利群(长嘴)",category:"利群",price:191,profit:0.2,tar:10,retail:210},
+{name:"利群(细支)",category:"利群",price:264,profit:-11.6,tar:6,retail:300},
+{name:"利群(软阳光)",category:"利群",price:306.5,profit:-11.5,tar:10,retail:360},
+{name:"利群(阳光)",category:"利群",price:386,profit:-3,tar:10,retail:450},
+{name:"利群(江南韵)",category:"利群",price:221,profit:-4,tar:8,retail:260},
+{name:"利群(西子阳光)",category:"利群",price:255,profit:-8,tar:5,retail:300},
+{name:"利群(夜西湖)",category:"利群",price:174,profit:1.6,tar:8,retail:200},
+{name:"利群(楼外楼)",category:"利群",price:170.5,profit:-4.5,tar:10,retail:200},
+{name:"利群(休闲细支)",category:"利群",price:1225,profit:547,tar:6,retail:1500},
+{name:"利群(天外天)",category:"利群",price:475,profit:-7,tar:8,retail:550},
+{name:"玉溪(软)",category:"玉溪",price:185.5,profit:-16,tar:11,retail:230},
+{name:"玉溪(软和谐)",category:"玉溪",price:318,profit:-14,tar:10,retail:400},
+{name:"玉溪(中支)",category:"玉溪",price:211,profit:-14,tar:8,retail:250},
+{name:"玉溪(境界)",category:"玉溪",price:483,profit:-27,tar:8,retail:600},
+{name:"玉溪(细支翡翠)",category:"玉溪",price:630,profit:-48.4,tar:6,retail:800},
+{name:"玉溪(翡翠中支)",category:"玉溪",price:258,profit:33,tar:8,retail:300},
+{name:"玉溪(中支阿诗玛)",category:"玉溪",price:244,profit:-19,tar:8,retail:300},
+{name:"红塔山(经典)",category:"红塔山",price:82,profit:43.84,tar:11,retail:75},
+{name:"红塔山(新时代)",category:"红塔山",price:102.5,profit:5.5,tar:10,retail:100},
+{name:"红塔山(软经典)",category:"红塔山",price:91,profit:16,tar:11,retail:80},
+{name:"好日子(硬金樽)",category:"好日子",price:213,profit:-3.42,tar:10,retail:250},
+{name:"好日子(硬吉祥)",category:"好日子",price:62,profit:12,tar:11,retail:65},
+{name:"好日子(软珍品)",category:"好日子",price:144,profit:-1,tar:10,retail:160},
+{name:"好日子(盛世)",category:"好日子",price:700,profit:-78,tar:8,retail:800},
+{name:"好日子(硬金精品)",category:"好日子",price:90.5,profit:2.5,tar:11,retail:100},
+{name:"好日子(城市之光)",category:"好日子",price:212,profit:10.6,tar:8,retail:250},
+{name:"黄金叶(天叶)",category:"黄金叶",price:697,profit:18.6,tar:8,retail:800},
+{name:"黄金叶(中支天叶)",category:"黄金叶",price:938,profit:-62,tar:8,retail:1000},
+{name:"黄金叶(细支天叶)",category:"黄金叶",price:782,profit:-66,tar:6,retail:900},
+{name:"黄金叶(软天叶)",category:"黄金叶",price:852,profit:-28,tar:8,retail:1000},
+{name:"黄金叶(商鼎)",category:"黄金叶",price:151.5,profit:-13.5,tar:10,retail:180},
+{name:"黄金叶(炫尚)",category:"黄金叶",price:145,profit:-30,tar:6,retail:160},
+{name:"黄金叶(国色中支)",category:"黄金叶",price:382,profit:-4,tar:8,retail:450},
+{name:"黄金叶(中支天香)",category:"黄金叶",price:406,profit:-18,tar:8,retail:480},
+{name:"黄金叶(乐途)",category:"黄金叶",price:123.5,profit:1.5,tar:10,retail:150},
+{name:"黄金叶(爱尚)",category:"黄金叶",price:138.5,profit:-3.5,tar:6,retail:160},
+{name:"真龙(软祥云)",category:"真龙",price:111.5,profit:10.1,tar:10,retail:130},
+{name:"真龙(轩云)",category:"真龙",price:152,profit:8.9,tar:10,retail:180},
+{name:"真龙(细支凌云)",category:"真龙",price:147.5,profit:25.5,tar:6,retail:170},
+{name:"真龙(起源)",category:"真龙",price:216.5,profit:4.5,tar:10,retail:250},
+{name:"真龙(海韵)",category:"真龙",price:427,profit:-18.2,tar:8,retail:500},
+{name:"真龙(中支凌云)",category:"真龙",price:219,profit:-6,tar:8,retail:260},
+{name:"真龙(龙天下)",category:"真龙",price:288,profit:90.2,tar:8,retail:350},
+{name:"中南海(5mg)",category:"中南海",price:85.5,profit:5.5,tar:5,retail:100},
+{name:"中南海(8mg)",category:"中南海",price:100.5,profit:-3.5,tar:8,retail:120},
+{name:"中南海(典5)",category:"中南海",price:121,profit:-22,tar:5,retail:150},
+{name:"中南海(冰耀)",category:"中南海",price:156,profit:-69,tar:5,retail:200},
+{name:"中南海(细支5mg)",category:"中南海",price:201,profit:-0.4,tar:5,retail:240},
+{name:"中南海(酷爽)",category:"中南海",price:168,profit:-7,tar:5,retail:200},
+{name:"七匹狼(硬蓝)",category:"七匹狼",price:86,profit:15,tar:10,retail:100},
+{name:"七匹狼(硬红)",category:"七匹狼",price:133,profit:0.5,tar:11,retail:150},
+{name:"七匹狼(蓝钻)",category:"七匹狼",price:119.5,profit:5,tar:10,retail:140},
+{name:"七匹狼(纯雅)",category:"七匹狼",price:136,profit:-7,tar:8,retail:160},
+{name:"七匹狼(纯镜)",category:"七匹狼",price:176.5,profit:33.5,tar:8,retail:210},
+{name:"七匹狼(软灰)",category:"七匹狼",price:173.5,profit:-12,tar:10,retail:210},
+{name:"七匹狼(豪迈)",category:"七匹狼",price:128,profit:42,tar:10,retail:150},
+{name:"七匹狼(锋芒)",category:"七匹狼",price:141,profit:-17,tar:8,retail:170},
+{name:"七匹狼(古田)",category:"七匹狼",price:368,profit:-56,tar:8,retail:450},
+{name:"荷花(小雅)",category:"荷花",price:448,profit:-22,tar:6,retail:530},
+{name:"荷花(软)",category:"荷花",price:299.5,profit:23.9,tar:10,retail:350},
+{name:"荷花(细支)",category:"荷花",price:359,profit:-1.4,tar:6,retail:420},
+{name:"荷花(双中支)",category:"荷花",price:341,profit:2,tar:8,retail:400},
+{name:"荷花(中支)",category:"荷花",price:378,profit:-4,tar:8,retail:450},
+{name:"冬虫夏草(和润)",category:"冬虫夏草",price:372,profit:-52,tar:6,retail:450},
+{name:"冬虫夏草(和润细支)",category:"冬虫夏草",price:392,profit:-32,tar:5,retail:480},
+{name:"冬虫夏草(双中支)",category:"冬虫夏草",price:313,profit:-26,tar:8,retail:380},
+{name:"555(西关)",category:"555",price:169,profit:0,tar:10,retail:200},
+{name:"555(双冰)",category:"555",price:265,profit:-6,tar:7,retail:300},
+{name:"555(金锐)",category:"555",price:228,profit:90.2,tar:10,retail:270},
+{name:"555(国际版)",category:"555",price:240,profit:20,tar:10,retail:280},
+{name:"娇子(X)",category:"娇子",price:123,profit:-6.5,tar:8,retail:150},
+{name:"娇子(格调)",category:"娇子",price:91,profit:3,tar:8,retail:100},
+{name:"娇子(蓝时代)",category:"娇子",price:68.5,profit:7,tar:8,retail:80},
+{name:"娇子(宽窄好运)",category:"娇子",price:235,profit:-28,tar:8,retail:280},
+{name:"娇子(宽窄细支)",category:"娇子",price:205,profit:-20,tar:6,retail:250},
+{name:"娇子(平安)",category:"娇子",price:311,profit:-28.2,tar:8,retail:360},
+{name:"娇子(逍遥)",category:"娇子",price:697,profit:-66.2,tar:8,retail:800},
+{name:"娇子(锦上)",category:"娇子",price:252,profit:-11,tar:8,retail:300},
+{name:"娇子(圣山)",category:"娇子",price:79,profit:17.5,tar:8,retail:90},
+{name:"云烟(软珍品)",category:"云烟",price:195,profit:-9,tar:11,retail:230},
+{name:"云烟(细支大重九)",category:"云烟",price:680,profit:-30,tar:6,retail:800},
+{name:"云烟(大重九)",category:"云烟",price:680,profit:-30,tar:8,retail:800}
+];
+
+// State
+let activeCategory = '全部';
+let activeSort = 'default';
+let searchTerm = '';
+
+// Generate categories dynamically
+const categories = ['全部', ...[...new Set(DATA.map(d => d.category))]];
+
+// Sort options
+const sortOptions = [
+  {key:'default',label:'默认'},
+  {key:'price_asc',label:'价格 ↑'},
+  {key:'price_desc',label:'价格 ↓'},
+  {key:'tar_asc',label:'焦油 ↑'},
+  {key:'tar_desc',label:'焦油 ↓'},
+  {key:'profit_asc',label:'利润 ↑'},
+  {key:'profit_desc',label:'利润 ↓'}
+];
+
+function renderStats() {
+  const up = DATA.filter(d => d.profit > 0).length;
+  const down = DATA.filter(d => d.profit < 0).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat stat-total"><div class="num">${DATA.length}</div><div class="label">总品种</div></div>
+    <div class="stat stat-up"><div class="num">${up}</div><div class="label">上涨</div></div>
+    <div class="stat stat-down"><div class="num">${down}</div><div class="label">下跌</div></div>
+  `;
+}
+
+function renderFilters() {
+  document.getElementById('filterTags').innerHTML = categories.map(c =>
+    `<div class="tag${c===activeCategory?' active':''}" onclick="setCategory('${c}')">${c}</div>`
+  ).join('');
+}
+
+function renderSortButtons() {
+  document.getElementById('sortWrap').innerHTML = sortOptions.map(s =>
+    `<div class="sort-btn${s.key===activeSort?' active':''}" onclick="setSort('${s.key}')">${s.label}</div>`
+  ).join('');
+}
+
+function getFiltered() {
+  let list = [...DATA];
+  if (activeCategory !== '全部') list = list.filter(d => d.category === activeCategory);
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    list = list.filter(d => d.name.toLowerCase().includes(q) || d.category.toLowerCase().includes(q));
+  }
+  switch(activeSort) {
+    case 'price_asc': list.sort((a,b)=>a.price-b.price); break;
+    case 'price_desc': list.sort((a,b)=>b.price-a.price); break;
+    case 'tar_asc': list.sort((a,b)=>a.tar-b.tar); break;
+    case 'tar_desc': list.sort((a,b)=>b.tar-a.tar); break;
+    case 'profit_asc': list.sort((a,b)=>a.profit-b.profit); break;
+    case 'profit_desc': list.sort((a,b)=>b.profit-a.profit); break;
+  }
+  return list;
+}
+
+function renderCards() {
+  const list = getFiltered();
+  document.getElementById('resultCount').textContent = `共 ${list.length} 条结果`;
+  if (!list.length) {
+    document.getElementById('cardList').innerHTML = '<div class="empty">😢 没有找到匹配的产品</div>';
+    return;
+  }
+  document.getElementById('cardList').innerHTML = list.map(d => {
+    const pClass = d.profit > 0 ? 'up' : (d.profit < 0 ? 'down' : '');
+    const pText = d.profit > 0 ? `+${d.profit}` : `${d.profit}`;
+    return `<div class="card">
+      <div class="card-top">
+        <div class="card-name">${d.name}</div>
+        <div class="card-category">${d.category}</div>
+      </div>
+      <div class="card-mid">
+        <div class="card-price">¥${d.price}<span>/条</span></div>
+        <div class="card-profit ${pClass}">${pText}</div>
+      </div>
+      <div class="card-bot">
+        <div class="card-tar">🫧 焦油 ${d.tar}mg</div>
+        <div class="card-retail">💰 零售 ¥${d.retail}/条</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setCategory(c) {
+  activeCategory = c;
+  renderFilters();
+  renderCards();
+}
+
+function setSort(s) {
+  activeSort = s;
+  renderSortButtons();
+  renderCards();
+}
+
+document.getElementById('search').addEventListener('input', function() {
+  searchTerm = this.value.trim();
+  renderCards();
+});
+
+// Init
+renderStats();
+renderFilters();
+renderSortButtons();
+renderCards();
+</script>
+</body>
+</html>
