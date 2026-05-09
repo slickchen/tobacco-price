@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🚬 烟草价格查询</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;min-height:100vh;padding-bottom:80px}
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 16px 16px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.5)}
+.header h1{font-size:22px;color:#fff;margin-bottom:4px}
+.header .date{font-size:12px;color:#888}
+.header .btn-row{margin-top:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.header .btn-row button{padding:5px 14px;border-radius:8px;border:1px solid #444;background:#2a2a2a;color:#ccc;font-size:12px;cursor:pointer;transition:all .2s}
+.header .btn-row button:active{transform:scale(0.95)}
+.stats{display:flex;justify-content:center;gap:16px;padding:12px 16px;background:#1a1a1a;border-bottom:1px solid #2a2a2a}
+.stats .stat{text-align:center}
+.stats .stat .num{font-size:18px;font-weight:700}
+.stats .stat .label{font-size:11px;color:#888;margin-top:2px}
+.stat-up .num{color:#ff4444}
+.stat-down .num{color:#00cc66}
+.stat-total .num{color:#ffc107}
+.stat-sell .num{color:#42a5f5}
+.search-wrap{padding:12px 16px;background:#1a1a1a;position:sticky;top:72px;z-index:99}
+.search-wrap input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid #333;background:#2a2a2a;color:#fff;font-size:15px;outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:#ffc107}
+.search-wrap input::placeholder{color:#666}
+.filter-wrap{padding:8px 16px 12px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;position:sticky;top:126px;z-index:98}
+.filter-tags{display:flex;flex-wrap:wrap;gap:8px}
+.filter-tags .tag{padding:5px 14px;border-radius:20px;font-size:13px;background:#2a2a2a;color:#aaa;border:1px solid #333;cursor:pointer;transition:all .2s;white-space:nowrap}
+.filter-tags .tag.active{background:#ffc107;color:#000;border-color:#ffc107;font-weight:600}
+.sort-wrap{padding:8px 16px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:176px;z-index:97}
+.sort-wrap::-webkit-scrollbar{display:none}
+.sort-btn{padding:5px 12px;border-radius:8px;font-size:12px;background:#2a2a2a;color:#aaa;border:1px solid #333;cursor:pointer;white-space:nowrap;transition:all .2s}
+.sort-btn.active{background:#e65100;color:#fff;border-color:#e65100}
+.card-list{padding:8px 12px}
+.card{background:#1e1e1e;border-radius:12px;padding:14px 16px;margin-bottom:8px;border:1px solid #2a2a2a;transition:transform .15s}
+.card:active{transform:scale(0.98)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-idx{font-size:11px;color:#555;margin-right:6px;min-width:28px;padding-top:3px}
+.card-name{font-size:16px;font-weight:600;color:#fff;flex:1;margin-right:8px}
+.card-category{font-size:11px;padding:2px 8px;border-radius:10px;background:#2a2a2e;color:#888;border:1px solid #333;white-space:nowrap}
+.card-mid{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.card-price{font-size:24px;font-weight:700;color:#ffc107}
+.card-price span{font-size:13px;color:#888;margin-left:2px}
+.card-profit{font-size:16px;font-weight:700;padding:3px 10px;border-radius:8px}
+.card-profit.up{color:#ff4444;background:rgba(255,68,68,0.12)}
+.card-profit.down{color:#00cc66;background:rgba(0,204,102,0.12)}
+.card-profit.zero{color:#888;background:rgba(136,136,136,0.12)}
+.card-sell-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding:8px 10px;background:#252525;border-radius:8px;border:1px solid #333}
+.card-sell-left{display:flex;align-items:center;gap:8px;flex:1}
+.card-sell-label{font-size:12px;color:#aaa;white-space:nowrap}
+.card-sell-input{width:90px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#1a1a1a;color:#42a5f5;font-size:16px;font-weight:700;text-align:right;outline:none;transition:border-color .2s}
+.card-sell-input:focus{border-color:#42a5f5}
+.card-sell-profit{font-size:14px;font-weight:700;min-width:80px;text-align:right}
+.card-sell-profit.up{color:#ff4444}
+.card-sell-profit.down{color:#00cc66}
+.card-sell-profit.zero{color:#888}
+.empty{text-align:center;padding:60px 20px;color:#666;font-size:15px}
+.footer{text-align:center;padding:20px 16px;font-size:11px;color:#555;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(transparent,#0f0f0f 30%)}
+.result-count{padding:6px 16px;font-size:12px;color:#666;background:#1a1a1a}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🚬 烟草价格查询</h1>
+  <div class="date">2025-05-08 仅供参考 · 学术研究</div>
+  <div class="btn-row">
+    <button onclick="resetAllSellPrices()">🔄 重置售价</button>
+    <button onclick="exportSellPrices()">📋 导出售价</button>
+  </div>
+</div>
+<div class="stats" id="stats"></div>
+<div class="search-wrap">
+  <input type="text" id="search" placeholder="🔍 搜索品牌或名称...">
+</div>
+<div class="filter-wrap">
+  <div class="filter-tags" id="filterTags"></div>
+</div>
+<div class="sort-wrap" id="sortWrap"></div>
+<div class="result-count" id="resultCount"></div>
+<div class="card-list" id="cardList"></div>
+<div class="footer">价格仅供参考 · 学术研究用途 · 售价自动保存到本地</div>
+<div class="toast" id="toast"></div>
+<script>
+/*DATA_PLACEHOLDER*/
+const SELL_KEY='tobacco_sell_v3';
+function loadSP(){try{return JSON.parse(localStorage.getItem(SELL_KEY)||'{}')}catch(e){return{}}}
+function saveSP(o){localStorage.setItem(SELL_KEY,JSON.stringify(o))}
+function getSell(id,item){const sp=loadSP();return sp[id]!==undefined?sp[id]:item.p}
+function setSell(id,v){const sp=loadSP();sp[id]=v;saveSP(sp)}
+let activeCat='全部',activeSort='default',searchTerm='';
+const cats=['全部',...[...new Set(DATA.map(d=>d.cat))]];
+const sorts=[
+  {key:'default',label:'默认'},{key:'price_asc',label:'价格↑'},{key:'price_desc',label:'价格↓'},
+  {key:'profit_asc',label:'盈亏↑'},{key:'profit_desc',label:'盈亏↓'},
+  {key:'sp_asc',label:'售价利润↑'},{key:'sp_desc',label:'售价利润↓'}
+];
+function renderStats(){
+  const up=DATA.filter(d=>d.pr>0).length,down=DATA.filter(d=>d.pr<0).length;
+  let tsp=0;DATA.forEach(d=>{tsp+=(getSell(d.id,d)-d.p)});
+  const cls=tsp>0?'stat-up':(tsp<0?'stat-down':'stat-total');
+  document.getElementById('stats').innerHTML=
+    '<div class="stat stat-total"><div class="num">'+DATA.length+'</div><div class="label">总品种</div></div>'+
+    '<div class="stat stat-up"><div class="num">'+up+'</div><div class="label">盈</div></div>'+
+    '<div class="stat stat-down"><div class="num">'+down+'</div><div class="label">亏</div></div>'+
+    '<div class="stat '+cls+'"><div class="num">'+(tsp>0?'+':'')+tsp.toFixed(0)+'</div><div class="label">售价总利润</div></div>';
+}
+function renderFilters(){
+  document.getElementById('filterTags').innerHTML=cats.map(c=>
+    '<div class="tag'+(c===activeCat?' active':'')+'" onclick="setCat(\''+c+'\')">'+c+'</div>'
+  ).join('');
+}
+function renderSorts(){
+  document.getElementById('sortWrap').innerHTML=sorts.map(s=>
+    '<div class="sort-btn'+(s.key===activeSort?' active':'')+'" onclick="setSort(\''+s.key+'\')">'+s.label+'</div>'
+  ).join('');
+}
+function getList(){
+  let l=[...DATA];
+  if(activeCat!=='全部')l=l.filter(d=>d.cat===activeCat);
+  if(searchTerm){const q=searchTerm.toLowerCase();l=l.filter(d=>d.name.toLowerCase().includes(q)||d.cat.toLowerCase().includes(q))}
+  switch(activeSort){
+    case'price_asc':l.sort((a,b)=>a.p-b.p);break;
+    case'price_desc':l.sort((a,b)=>b.p-a.p);break;
+    case'profit_asc':l.sort((a,b)=>a.pr-b.pr);break;
+    case'profit_desc':l.sort((a,b)=>b.pr-a.pr);break;
+    case'sp_asc':l.sort((a,b)=>(getSell(a.id,a)-a.p)-(getSell(b.id,b)-b.p));break;
+    case'sp_desc':l.sort((a,b)=>(getSell(b.id,b)-b.p)-(getSell(a.id,a)-a.p));break;
+  }
+  return l;
+}
+function renderCards(){
+  const list=getList();
+  document.getElementById('resultCount').textContent='共 '+list.length+' 条结果';
+  if(!list.length){document.getElementById('cardList').innerHTML='<div class="empty">😢 没有找到匹配的产品</div>';return}
+  document.getElementById('cardList').innerHTML=list.map(d=>{
+    const pClass=d.pr>0?'up':(d.pr<0?'down':'zero');
+    const pText=d.pr>0?'+'+d.pr:''+d.pr;
+    const sellP=getSell(d.id,d);
+    const sp=sellP-d.p;
+    const spClass=sp>0?'up':(sp<0?'down':'zero');
+    const spText=sp>0?'+'+sp.toFixed(1):(sp===0?'0':sp.toFixed(1));
+    return '<div class="card">'+
+      '<div class="card-top"><span class="card-idx">'+d.id+'</span><div class="card-name">'+d.name+'</div><div class="card-category">'+d.cat+'</div></div>'+
+      '<div class="card-mid"><div class="card-price">¥'+d.p+'<span>/条</span></div><div class="card-profit '+pClass+'">'+pText+'</div></div>'+
+      '<div class="card-sell-row"><div class="card-sell-left"><span class="card-sell-label">🏷️ 售价</span><input type="number" class="card-sell-input" value="'+sellP+'" step="0.5" onchange="onSellChange('+d.id+',this.value)" onfocus="this.select()"></div><div class="card-sell-profit '+spClass+'">利润 '+spText+'</div></div>'+
+    '</div>';
+  }).join('');
+  renderStats();
+}
+function onSellChange(id,val){
+  const v=parseFloat(val);
+  if(!isNaN(v)){setSell(id,v);renderCards()}
+}
+function setCat(c){activeCat=c;renderFilters();renderCards()}
+function setSort(s){activeSort=s;renderSorts();renderCards()}
+function resetAllSellPrices(){
+  if(confirm('确定要重置所有自定义售价吗？')){localStorage.removeItem(SELL_KEY);renderCards();showToast('✅ 已重置所有售价')}
+}
+function exportSellPrices(){
+  const sp=loadSP();
+  const lines=['序号\t品名\t当前价格\t自定义售价\t售价利润'];
+  DATA.forEach(d=>{
+    const sellP=sp[d.id]!==undefined?sp[d.id]:d.p;
+    const profit=(sellP-d.p).toFixed(1);
+    lines.push(d.id+'\t'+d.name+'\t'+d.p+'\t'+sellP+'\t'+profit);
+  });
+  const text=lines.join('\n');
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('📋 已复制到剪贴板'))}
+  else{const blob=new Blob([text],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tobacco_prices.txt';a.click();showToast('📋 已下载文件')}
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+document.getElementById('search').addEventListener('input',function(){searchTerm=this.value.trim();renderCards()});
+renderStats();renderFilters();renderSorts();renderCards();
+</script>
+</body>
+</html>
